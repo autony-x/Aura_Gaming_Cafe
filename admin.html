@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AURA GAME ZONE — Admin Panel</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+<!-- ✅ EXCEL LIBRARY (Required for Export Excel) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root { --neon-blue:#00d4ff; --electric-purple:#8b5cf6; --magenta:#ff00aa; --bg:#05050a; --panel:#0b0b14; --card:#10101c; --silver:#c9c9d6; --silver-dim:#7a7a8c; --success:#10b981; --danger:#ef4444; --warning:#f59e0b; }
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Rajdhani',sans-serif;background:var(--bg);color:var(--silver);min-height:100vh;}
+h1,h2,h3{font-family:'Orbitron',sans-serif;}
+.login-screen{min-height:100vh;display:grid;place-items:center;background:radial-gradient(ellipse at center,rgba(139,92,246,0.15),transparent 70%);}
+.login-box{background:var(--panel);padding:40px;border-radius:16px;border:1px solid rgba(139,92,246,0.3);width:90%;max-width:400px;text-align:center;}
+.login-box h1{font-size:1.5rem;margin-bottom:8px;background:linear-gradient(135deg,var(--neon-blue),var(--magenta));-webkit-background-clip:text;background-clip:text;color:transparent;}
+.login-box p{color:var(--silver-dim);margin-bottom:24px;font-size:0.9rem;}
+.login-box input{width:100%;padding:14px;border-radius:10px;margin-bottom:14px;background:var(--card);border:1px solid rgba(139,92,246,0.3);color:#fff;font-family:inherit;font-size:1rem;}
+.login-box input:focus{outline:none;border-color:var(--neon-blue);}
+.login-box button{width:100%;padding:14px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--neon-blue),var(--electric-purple),var(--magenta));color:#fff;font-weight:700;font-size:1rem;cursor:pointer;text-transform:uppercase;letter-spacing:1px;}
+.login-error{color:var(--danger);font-size:0.85rem;margin-bottom:10px;display:none;}
+.admin-panel{display:none;}
+.admin-panel.active{display:block;}
+.storage-status{background:var(--card);padding:12px 24px;border-bottom:1px solid rgba(139,92,246,0.2);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;font-size:0.85rem;}
+.storage-status .status-item{display:flex;align-items:center;gap:8px;}
+.storage-status .dot{width:8px;height:8px;border-radius:50%;}
+.dot.green{background:var(--success);box-shadow:0 0 8px var(--success);}
+.dot.red{background:var(--danger);box-shadow:0 0 8px var(--danger);}
+.storage-status .view-data{padding:6px 12px;border-radius:6px;border:1px solid var(--neon-blue);background:transparent;color:var(--neon-blue);cursor:pointer;font-family:inherit;font-size:0.8rem;font-weight:600;}
+.storage-status .view-data:hover{background:var(--neon-blue);color:#000;}
+.topbar{background:var(--panel);padding:16px 24px;border-bottom:1px solid rgba(139,92,246,0.2);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:10px;}
+.topbar h1{font-size:1.2rem;background:linear-gradient(135deg,var(--neon-blue),var(--magenta));-webkit-background-clip:text;background-clip:text;color:transparent;}
+.topbar-actions{display:flex;gap:10px;flex-wrap:wrap;}
+.topbar-actions button{padding:8px 16px;border-radius:8px;border:1px solid rgba(139,92,246,0.3);background:var(--card);color:var(--silver);cursor:pointer;font-family:inherit;font-weight:600;font-size:0.85rem;transition:0.2s;}
+.topbar-actions button:hover{border-color:var(--neon-blue);color:var(--neon-blue);}
+.topbar-actions .logout{border-color:var(--danger);color:var(--danger);}
+.topbar-actions .logout:hover{background:var(--danger);color:#fff;}
+.layout{display:grid;grid-template-columns:240px 1fr;min-height:calc(100vh - 70px);}
+.sidebar{background:var(--panel);border-right:1px solid rgba(139,92,246,0.15);padding:20px 0;}
+.sidebar-item{padding:14px 24px;cursor:pointer;display:flex;align-items:center;gap:12px;color:var(--silver-dim);font-weight:600;transition:0.2s;border-left:3px solid transparent;}
+.sidebar-item:hover{background:rgba(139,92,246,0.08);color:var(--silver);}
+.sidebar-item.active{background:rgba(139,92,246,0.12);color:var(--neon-blue);border-left-color:var(--neon-blue);}
+.sidebar-item i{width:20px;}
+.main{padding:30px;overflow-x:auto;}
+.page{display:none;}
+.page.active{display:block;}
+.page-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;}
+.page-head h2{font-size:1.5rem;color:#fff;}
+.btn-add{padding:10px 20px;border-radius:8px;border:none;background:linear-gradient(135deg,var(--neon-blue),var(--magenta));color:#fff;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:8px;}
+.btn-add:hover{transform:translateY(-2px);box-shadow:0 4px 20px rgba(139,92,246,0.4);}
+.data-table{width:100%;background:var(--panel);border-radius:12px;border:1px solid rgba(139,92,246,0.2);overflow:hidden;overflow-x:auto;margin-bottom:20px;}
+.data-table table{width:100%;border-collapse:collapse;min-width:600px;}
+.data-table th{background:rgba(139,92,246,0.12);padding:14px;text-align:left;font-size:0.8rem;color:var(--neon-blue);letter-spacing:1px;text-transform:uppercase;font-weight:700;}
+.data-table td{padding:14px;border-top:1px solid rgba(139,92,246,0.08);font-size:0.95rem;color:var(--silver);vertical-align:middle;}
+.data-table tr:hover td{background:rgba(139,92,246,0.04);}
+.data-table .actions{display:flex;gap:8px;}
+.btn-edit,.btn-del{padding:6px 12px;border-radius:6px;border:none;cursor:pointer;font-family:inherit;font-size:0.8rem;font-weight:600;}
+.btn-edit{background:rgba(0,212,255,0.15);color:var(--neon-blue);}
+.btn-edit:hover{background:var(--neon-blue);color:#000;}
+.btn-del{background:rgba(239,68,68,0.15);color:var(--danger);}
+.btn-del:hover{background:var(--danger);color:#fff;}
+.thumb{width:50px;height:50px;border-radius:8px;object-fit:cover;border:1px solid rgba(139,92,246,0.3);background:var(--card);}
+.thumb-placeholder{width:50px;height:50px;border-radius:8px;background:var(--card);display:grid;place-items:center;color:var(--silver-dim);border:1px solid rgba(139,92,246,0.2);}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.8);display:none;place-items:center;z-index:1000;padding:20px;}
+.modal-overlay.active{display:grid;}
+.modal{background:var(--panel);border-radius:16px;padding:30px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;border:1px solid rgba(139,92,246,0.3);}
+.modal h3{color:#fff;margin-bottom:20px;font-size:1.3rem;}
+.form-group{margin-bottom:14px;}
+.form-group label{display:block;margin-bottom:6px;font-size:0.85rem;color:var(--silver-dim);font-weight:600;text-transform:uppercase;letter-spacing:1px;}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:10px 14px;border-radius:8px;background:var(--card);border:1px solid rgba(139,92,246,0.3);color:#fff;font-family:inherit;font-size:0.95rem;}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--neon-blue);}
+.form-group textarea{resize:vertical;min-height:70px;}
+.form-group small{display:block;margin-top:4px;color:var(--silver-dim);font-size:0.75rem;}
+.modal-actions{display:flex;gap:10px;margin-top:20px;}
+.modal-actions button{flex:1;padding:12px;border-radius:8px;border:none;font-family:inherit;font-weight:700;cursor:pointer;text-transform:uppercase;}
+.btn-save{background:linear-gradient(135deg,var(--neon-blue),var(--magenta));color:#fff;}
+.btn-cancel{background:var(--card);color:var(--silver);border:1px solid rgba(139,92,246,0.3);}
+.input-with-prefix{position:relative;}
+.input-with-prefix input{padding-left:40px;}
+.input-with-prefix .prefix{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--neon-blue);font-weight:700;font-size:1.1rem;pointer-events:none;}
+.checkbox-group{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.checkbox-group label{display:flex;align-items:center;gap:6px;padding:8px;background:var(--card);border-radius:6px;border:1px solid rgba(139,92,246,0.2);cursor:pointer;font-size:0.9rem;}
+.checkbox-group label:hover{border-color:var(--neon-blue);}
+.checkbox-group input[type="checkbox"]{accent-color:var(--neon-blue);}
+.toast{position:fixed;bottom:30px;right:30px;padding:14px 24px;border-radius:10px;background:var(--success);color:#fff;font-weight:700;z-index:2000;transform:translateX(400px);transition:transform 0.3s;box-shadow:0 10px 30px rgba(0,0,0,0.4);}
+.toast.show{transform:translateX(0);}
+.toast.error{background:var(--danger);}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:30px;}
+.stat-card{padding:20px;border-radius:12px;background:var(--panel);border:1px solid rgba(139,92,246,0.2);}
+.stat-card .label{font-size:0.8rem;color:var(--silver-dim);text-transform:uppercase;letter-spacing:1px;}
+.stat-card .value{font-size:2rem;font-weight:900;color:#fff;font-family:'Orbitron',sans-serif;margin-top:6px;}
+.help-card{background:var(--panel);padding:24px;border-radius:12px;border:1px solid rgba(139,92,246,0.2);margin-bottom:16px;}
+.help-card h3{color:var(--neon-blue);margin-bottom:10px;font-size:1.1rem;}
+.help-card p,.help-card li{color:var(--silver);font-size:0.95rem;line-height:1.7;}
+.help-card ul,.help-card ol{padding-left:20px;margin-top:8px;}
+.custom-input-wrap{margin-top:10px;display:none;}
+.custom-input-wrap.show{display:block;}
+.data-viewer{background:var(--card);padding:20px;border-radius:10px;max-height:400px;overflow-y:auto;font-family:monospace;font-size:0.85rem;color:var(--neon-blue);white-space:pre-wrap;word-break:break-all;border:1px solid rgba(139,92,246,0.3);}
+@media(max-width:768px){.layout{grid-template-columns:1fr;}.sidebar{display:flex;overflow-x:auto;padding:0;}.sidebar-item{white-space:nowrap;border-left:none;border-bottom:3px solid transparent;}.sidebar-item.active{border-left:none;border-bottom-color:var(--neon-blue);}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <h1><i class="fas fa-lock"></i> Admin Access</h1>
+    <p>AURA GAME ZONE — Owner Panel</p>
+    <div class="login-error" id="loginError">❌ Incorrect password</div>
+    <input type="password" id="adminPass" placeholder="Enter admin password" />
+    <button onclick="login()">Login</button>
+    <p style="margin-top:20px;font-size:0.75rem;color:var(--silver-dim);">Default password: <strong>aura2026</strong></p>
+  </div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div class="admin-panel" id="adminPanel">
+  <div class="storage-status">
+    <div class="status-item"><span class="dot" id="storageDot"></span><span id="storageStatusText">Checking...</span></div>
+    <div class="status-item"><span>Storage: <strong id="storageUsed">0 KB</strong></span></div>
+    <button class="view-data" onclick="showDataViewer()"><i class="fas fa-eye"></i> View Saved Data</button>
+  </div>
+
+  <div class="topbar">
+    <h1><i class="fas fa-gamepad"></i> AURA ADMIN</h1>
+    <div class="topbar-actions">
+      <button onclick="exportToExcel()" style="border-color:var(--success);color:var(--success);"><i class="fas fa-file-excel"></i> Export Excel</button>
+      <button onclick="exportData()"><i class="fas fa-download"></i> Backup</button>
+      <button onclick="document.getElementById('importFile').click()"><i class="fas fa-upload"></i> Restore</button>
+      <input type="file" id="importFile" accept=".json,.csv,.xlsx" style="display:none" onchange="importData(event)">
+      <button class="logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div class="sidebar">
+      <div class="sidebar-item active" data-page="dashboard"><i class="fas fa-chart-line"></i> Dashboard</div>
+      <div class="sidebar-item" data-page="orders"><i class="fas fa-receipt"></i> Daily Orders</div>
+      <div class="sidebar-item" data-page="games"><i class="fas fa-gamepad"></i> Games</div>
+      <div class="sidebar-item" data-page="food"><i class="fas fa-utensils"></i> Food Menu</div>
+      <div class="sidebar-item" data-page="pricing"><i class="fas fa-tags"></i> Pricing</div>
+      <div class="sidebar-item" data-page="leaderboard"><i class="fas fa-trophy"></i> Leaderboard</div>
+      <div class="sidebar-item" data-page="tournaments"><i class="fas fa-calendar"></i> Tournaments</div>
+      <div class="sidebar-item" data-page="champion"><i class="fas fa-crown"></i> Champion</div>
+    </div>
+
+    <div class="main">
+
+      <!-- DASHBOARD -->
+      <div class="page active" id="page-dashboard">
+        <div class="page-head"><h2>Dashboard</h2></div>
+        <div class="stats-grid">
+          <div class="stat-card"><div class="label">Games</div><div class="value" id="statGames">0</div></div>
+          <div class="stat-card"><div class="label">Food Items</div><div class="value" id="statFood">0</div></div>
+          <div class="stat-card"><div class="label">Tournaments</div><div class="value" id="statTour">0</div></div>
+          <div class="stat-card"><div class="label">Players</div><div class="value" id="statPlayers">0</div></div>
+          <div class="stat-card"><div class="label">Pricing</div><div class="value" id="statPricing">0</div></div>
+          <div class="stat-card"><div class="label">Today's Orders</div><div class="value" id="statTodayOrders">0</div></div>
+          <div class="stat-card"><div class="label">Today's Revenue</div><div class="value" id="statTodayRevenue" style="color:var(--success);">₹0</div></div>
+        </div>
+        <div class="help-card">
+          <h3><i class="fas fa-bolt"></i> Quick Tips</h3>
+          <ul>
+            <li>Click <strong>Daily Orders</strong> to log customer sessions (auto-suggests games & food!)</li>
+            <li>Click <strong>Export Excel</strong> at top for full business report</li>
+            <li>Click <strong>Backup</strong> weekly to save data as a file</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- ORDERS PAGE -->
+      <div class="page" id="page-orders">
+        <div class="page-head">
+          <h2>🧾 Daily Orders & Sales</h2>
+          <button class="btn-add" onclick="openOrderModal()"><i class="fas fa-plus"></i> Log New Order</button>
+        </div>
+        <div class="data-table">
+          <table>
+            <thead><tr><th>Time</th><th>Customer</th><th>Station</th><th>Game / Console</th><th>Food</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="ordersTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- GAMES PAGE -->
+      <div class="page" id="page-games">
+        <div class="page-head"><h2>🎮 Manage Games</h2><button class="btn-add" onclick="openGameModal()"><i class="fas fa-plus"></i> Add Game</button></div>
+        <div class="data-table"><table><thead><tr><th>Image</th><th>Title</th><th>Consoles</th><th>Genre</th><th>Mode</th><th>Actions</th></tr></thead><tbody id="gamesTable"></tbody></table></div>
+      </div>
+
+      <!-- FOOD PAGE -->
+      <div class="page" id="page-food">
+        <div class="page-head"><h2>🍔 Manage Food</h2><button class="btn-add" onclick="openFoodModal()"><i class="fas fa-plus"></i> Add Item</button></div>
+        <div class="data-table"><table><thead><tr><th>Image</th><th>Name</th><th>Category</th><th>Price</th><th>Actions</th></tr></thead><tbody id="foodTable"></tbody></table></div>
+      </div>
+
+      <!-- LEADERBOARD PAGE -->
+      <div class="page" id="page-leaderboard">
+        <div class="page-head"><h2>🏆 Manage Leaderboard</h2><button class="btn-add" onclick="openLbModal()"><i class="fas fa-plus"></i> Add Player</button></div>
+        <div class="data-table"><table><thead><tr><th>Image</th><th>Player</th><th>Points</th><th>Wins</th><th>Hours</th><th>Actions</th></tr></thead><tbody id="lbTable"></tbody></table></div>
+      </div>
+
+      <!-- TOURNAMENTS PAGE -->
+      <div class="page" id="page-tournaments">
+        <div class="page-head"><h2>📅 Manage Tournaments</h2><button class="btn-add" onclick="openTourneyModal()"><i class="fas fa-plus"></i> Add Tournament</button></div>
+        <div class="data-table"><table><thead><tr><th>Badge</th><th>Name</th><th>Game</th><th>Date</th><th>Prize</th><th>Actions</th></tr></thead><tbody id="tourneyTable"></tbody></table></div>
+      </div>
+
+      <!-- CHAMPION PAGE -->
+      <div class="page" id="page-champion">
+        <div class="page-head"><h2>👑 Reigning Champion</h2></div>
+        <div class="modal" style="max-width:100%;position:static;border:none;padding:0;">
+          <div class="form-group"><label>Champion Name</label><input type="text" id="champName"></div>
+          <div class="form-group"><label>Game</label><input type="text" id="champGame"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+            <div class="form-group"><label>Wins</label><input type="number" id="champWins"></div>
+            <div class="form-group"><label>Points</label><input type="number" id="champPoints"></div>
+          </div>
+          <div class="form-group"><label>Instagram Handle (e.g., @player)</label><input type="text" id="champInsta"></div>
+          <div class="form-group"><label>Profile Image URL (optional)</label><input type="text" id="champImage" placeholder="https://..."></div>
+          <button class="btn-add" onclick="saveChampion()" style="margin-top:10px;"><i class="fas fa-save"></i> Save Champion</button>
+        </div>
+      </div>
+
+      <!-- PRICING PAGE -->
+      <div class="page" id="page-pricing">
+        <div class="page-head"><h2>💰 Manage Pricing</h2><button class="btn-add" onclick="openPricingModal()"><i class="fas fa-plus"></i> Add Package</button></div>
+        <div class="data-table"><table><thead><tr><th>Title</th><th>Price</th><th>Featured</th><th>Actions</th></tr></thead><tbody id="pricingTable"></tbody></table></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- GAME MODAL -->
+<div class="modal-overlay" id="gameModal"><div class="modal">
+  <h3 id="gameModalTitle">Add Game</h3><input type="hidden" id="gameId">
+  <div class="form-group"><label>Game Title</label><input type="text" id="gameTitle"></div>
+  <div class="form-group"><label>Consoles</label>
+    <div class="checkbox-group">
+      <label><input type="checkbox" class="plat-cb" value="PS2"> PS2</label>
+      <label><input type="checkbox" class="plat-cb" value="PS3"> PS3</label>
+      <label><input type="checkbox" class="plat-cb" value="PS4"> PS4</label>
+      <label><input type="checkbox" class="plat-cb" value="PS5"> PS5</label>
+      <label><input type="checkbox" class="plat-cb" value="Xbox 360"> Xbox 360</label>
+      <label><input type="checkbox" class="plat-cb" value="Xbox Series"> Xbox Series</label>
+    </div>
+  </div>
+  <div class="form-group"><label>Genre</label><select id="gameGenre"><option>Action</option><option>Adventure</option><option>Sports</option><option>Fighting</option><option>Racing</option><option>Shooter</option><option>RPG</option><option>Story Mode</option></select></div>
+  <div class="form-group"><label>Mode</label><select id="gameMode"><option>Single</option><option>Multi</option><option>Both</option></select></div>
+  <div class="form-group"><label>Image URL (optional)</label><input type="text" id="gameImage" placeholder="https://..."></div>
+  <div class="modal-actions"><button class="btn-cancel" onclick="closeModal('gameModal')">Cancel</button><button class="btn-save" onclick="saveGame()">Save</button></div>
+</div></div>
+
+<!-- FOOD MODAL -->
+<div class="modal-overlay" id="foodModal"><div class="modal">
+  <h3 id="foodModalTitle">Add Food Item</h3><input type="hidden" id="foodId">
+  <div class="form-group"><label>Item Name</label><input type="text" id="foodName"></div>
+  <div class="form-group"><label>Category</label><select id="foodCat"><option>Burgers</option><option>Pizza</option><option>Snacks</option><option>Drinks</option><option>Coffee</option></select></div>
+  <div class="form-group"><label>Description</label><textarea id="foodDesc"></textarea></div>
+  <div class="form-group"><label>Price (₹)</label><input type="number" id="foodPrice"></div>
+  <div class="form-group"><label>Image URL (optional)</label><input type="text" id="foodImage" placeholder="https://..."></div>
+  <div class="modal-actions"><button class="btn-cancel" onclick="closeModal('foodModal')">Cancel</button><button class="btn-save" onclick="saveFood()">Save</button></div>
+</div></div>
+
+<!-- LEADERBOARD MODAL -->
+<div class="modal-overlay" id="lbModal"><div class="modal">
+  <h3 id="lbModalTitle">Add Player</h3><input type="hidden" id="lbId">
+  <div class="form-group"><label>Player Name</label><input type="text" id="lbName"></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+    <div class="form-group"><label>Points</label><input type="number" id="lbPoints"></div>
+    <div class="form-group"><label>Wins</label><input type="number" id="lbWins"></div>
+  </div>
+  <div class="form-group"><label>Hours Played</label><input type="number" id="lbHours"></div>
+  <div class="form-group"><label>Profile Image URL (optional)</label><input type="text" id="lbImage" placeholder="https://..."></div>
+  <div class="modal-actions"><button class="btn-cancel" onclick="closeModal('lbModal')">Cancel</button><button class="btn-save" onclick="saveLb()">Save</button></div>
+</div></div>
+
+<!-- TOURNAMENT MODAL -->
+<div class="modal-overlay" id="tourneyModal"><div class="modal">
+  <h3 id="tourneyModalTitle">Add Tournament</h3><input type="hidden" id="tourneyId">
+  <div class="form-group"><label>Badge</label>
+    <select id="tBadgeSelect" onchange="handleBadgeSelect()">
+      <option value="Fighting">Fighting</option><option value="Sports">Sports</option>
+      <option value="Battle Royale">Battle Royale</option><option value="Racing">Racing</option>
+      <option value="Adventure">Adventure</option><option value="Shooter">Shooter</option>
+      <option value="RPG">RPG</option><option value="Custom">Custom (Type your own)</option>
+    </select>
+    <div class="custom-input-wrap" id="tBadgeCustomWrap"><input type="text" id="tBadgeCustom" placeholder="Enter custom badge"></div>
+  </div>
+  <div class="form-group"><label>Tournament Name</label><input type="text" id="tName"></div>
+  <div class="form-group"><label>Game (e.g., Tekken 8 • PS5)</label><input type="text" id="tGame"></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+    <div class="form-group"><label>Date</label><input type="text" id="tDate" placeholder="15 Nov 2026"></div>
+    <div class="form-group"><label>Reg. Deadline</label><input type="text" id="tReg" placeholder="13 Nov 2026"></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+    <div class="form-group"><label>Entry Fee</label><div class="input-with-prefix"><span class="prefix">₹</span><input type="number" id="tFee" placeholder="150"></div></div>
+    <div class="form-group"><label>Format</label><input type="text" id="tFormat" placeholder="1v1 Elimination"></div>
+  </div>
+  <div class="form-group"><label>Prize Pool</label><div class="input-with-prefix"><span class="prefix">₹</span><input type="number" id="tPrize" placeholder="5000"></div></div>
+  <div class="modal-actions"><button class="btn-cancel" onclick="closeModal('tourneyModal')">Cancel</button><button class="btn-save" onclick="saveTourney()">Save</button></div>
+</div></div>
+
+<!-- PRICING MODAL -->
+<div class="modal-overlay" id="pricingModal">
+  <div class="modal">
+    <h3 id="pricingModalTitle">Add Package</h3>
+    <input type="hidden" id="pricingId">
+
+    <div class="form-group">
+      <label>Package Title</label>
+      <select id="pTitleSelect" onchange="handlePricingTitleSelect()">
+        <option value="Hourly Play">Hourly Play</option>
+        <option value="Next-Gen Hour">Next-Gen Hour</option>
+        <option value="Multiplayer Squad">Multiplayer Squad</option>
+        <option value="Group Party">Group Party</option>
+        <option value="Tournament Pass">Tournament Pass</option>
+        <option value="Aura Membership">Aura Membership</option>
+        <option value="Custom">Custom (Type your own)</option>
+      </select>
+      <div class="custom-input-wrap" id="pTitleCustomWrap">
+        <input type="text" id="pTitleCustom" placeholder="Enter custom title">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Card Icon</label>
+      <select id="pIcon">
+        <option value="fa-clock">🕒 Clock (Hourly)</option>
+        <option value="fa-bolt">⚡ Lightning (Next-Gen)</option>
+        <option value="fa-users">👥 Group (Multiplayer)</option>
+        <option value="fa-crown">👑 Crown (Party/VIP)</option>
+        <option value="fa-trophy">🏆 Trophy (Tournament)</option>
+        <option value="fa-star">⭐ Star (Membership)</option>
+        <option value="fa-gamepad">🎮 Gamepad (General)</option>
+      </select>
+    </div>
+
+    <div class="form-group"><label>Description</label><input type="text" id="pDesc"></div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+      <div class="form-group">
+        <label>Price</label>
+        <div class="input-with-prefix"><span class="prefix">₹</span><input type="number" id="pPrice" placeholder="60"></div>
+      </div>
+      <div class="form-group">
+        <label>Period</label>
+        <select id="pPeriodSelect" onchange="handlePricingPeriodSelect()">
+          <option value="/hour">/hour</option>
+          <option value="/2 hrs">/2 hrs</option>
+          <option value="/4 hrs">/4 hrs</option>
+          <option value="/month">/month</option>
+          <option value="/entry">/entry</option>
+          <option value="Custom">Custom (Type your own)</option>
+        </select>
+        <div class="custom-input-wrap" id="pPeriodCustomWrap">
+          <input type="text" id="pPeriodCustom" placeholder="e.g., /session">
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group"><label>Features (One per line)</label><textarea id="pFeatures" rows="4"></textarea></div>
+
+    <div class="form-group"><label><input type="checkbox" id="pFeatured"> Mark as "Most Popular"</label></div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('pricingModal')">Cancel</button>
+      <button class="btn-save" onclick="savePricing()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ ORDER MODAL WITH SMART DATALISTS ✅ -->
+<div class="modal-overlay" id="orderModal"><div class="modal" style="max-width:650px;">
+  <h3>🎮 Log Customer Session & Order</h3><input type="hidden" id="orderId">
+  <div style="display:grid;grid-template-columns:2fr 1fr;gap:14px;">
+    <div class="form-group"><label>Customer (Name / Phone)</label><input type="text" id="orderCustomer" placeholder="e.g., Rahul 98765"></div>
+    <div class="form-group"><label>Type</label><select id="orderType"><option value="Walk-In">🚶 Walk-In</option><option value="WhatsApp">💬 WhatsApp</option></select></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1.5fr 1fr;gap:14px;">
+    <div class="form-group"><label>Station No.</label><input type="text" id="orderStation" placeholder="e.g., 3"></div>
+    <div class="form-group"><label>Console</label><select id="orderConsole"><option value="PS5">PS5</option><option value="PS4">PS4</option><option value="PS3">PS3</option><option value="PS2">PS2</option><option value="Xbox Series">Xbox Series</option><option value="Xbox 360">Xbox 360</option><option value="PC">PC</option></select></div>
+    <div class="form-group"><label>Duration (Hrs)</label><input type="number" id="orderDuration" step="0.5" value="1"></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+    <div class="form-group">
+      <label>Game Played</label>
+      <input type="text" id="orderGame" list="gamesList" placeholder="Click to select or type...">
+      <datalist id="gamesList"></datalist>
+    </div>
+    <div class="form-group">
+      <label>Food / Snacks</label>
+      <input type="text" id="orderFood" list="foodList" placeholder="Click to select (e.g., 2x Fries)">
+      <datalist id="foodList"></datalist>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;">
+    <div class="form-group"><label>Total (₹)</label><input type="number" id="orderTotal" placeholder="0" style="font-weight:700;color:var(--success);font-size:1.2rem;"></div>
+    <div class="form-group"><label>Payment</label><select id="orderPayment"><option value="UPI">UPI</option><option value="Cash">Cash</option><option value="Card">Card</option></select></div>
+    <div class="form-group"><label>Status</label><select id="orderStatus"><option value="Paid">✅ Paid</option><option value="Pending">⏳ Pending</option></select></div>
+  </div>
+  <div class="modal-actions"><button class="btn-cancel" onclick="closeModal('orderModal')">Cancel</button><button class="btn-save" onclick="saveOrder()">💾 Save Order</button></div>
+</div></div>
+
+<!-- DATA VIEWER -->
+<div class="modal-overlay" id="dataViewerModal"><div class="modal" style="max-width:700px;">
+  <h3>📦 Saved Data</h3>
+  <div class="data-viewer" id="dataViewerContent"></div>
+  <div class="modal-actions" style="margin-top:20px;"><button class="btn-cancel" onclick="closeModal('dataViewerModal')">Close</button><button class="btn-save" onclick="copyDataToClipboard()"><i class="fas fa-copy"></i> Copy</button></div>
+</div></div>
+
+<div class="toast" id="toast">Saved!</div>
+
+<script>
+const ADMIN_PASSWORD = "aura2026";
+
+/* ===== LOGIN ===== */
+function login(){
+  if(document.getElementById('adminPass').value===ADMIN_PASSWORD){
+    sessionStorage.setItem('aura_admin','1');
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('adminPanel').classList.add('active');
+    checkStorageHealth(); refreshAll();
+  } else { document.getElementById('loginError').style.display='block'; }
+}
+document.getElementById('adminPass').addEventListener('keypress',e=>{if(e.key==='Enter')login();});
+function logout(){sessionStorage.removeItem('aura_admin');location.reload();}
+if(sessionStorage.getItem('aura_admin')==='1'){document.getElementById('loginScreen').style.display='none';document.getElementById('adminPanel').classList.add('active');checkStorageHealth();refreshAll();}
+
+document.querySelectorAll('.sidebar-item').forEach(item=>{
+  item.addEventListener('click',()=>{
+    document.querySelectorAll('.sidebar-item').forEach(i=>i.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    item.classList.add('active');
+    document.getElementById('page-'+item.dataset.page).classList.add('active');
+  });
+});
+
+/* ===== STORAGE ===== */
+function getData(key){try{const r=localStorage.getItem('aura_'+key);return r?JSON.parse(r):[];}catch{return[];}}
+function getObject(key){try{const r=localStorage.getItem('aura_'+key);return r?JSON.parse(r):{};}catch{return{};}}
+function setData(key,data){try{localStorage.setItem('aura_'+key,JSON.stringify(data));checkStorageHealth();return true;}catch(e){showToast('Save failed: '+e.message,true);return false;}}
+function nextId(arr){return arr.length?Math.max(...arr.map(x=>x.id))+1:1;}
+function closeModal(id){document.getElementById(id).classList.remove('active');}
+function showToast(msg,err=false){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show'+(err?' error':'');setTimeout(()=>t.classList.remove('show'),2500);}
+
+function checkStorageHealth(){
+  const dot=document.getElementById('storageDot'),text=document.getElementById('storageStatusText'),used=document.getElementById('storageUsed');
+  try{
+    localStorage.setItem('aura_test','1');localStorage.removeItem('aura_test');
+    let total=0;for(let k in localStorage){if(localStorage.hasOwnProperty(k)&&k.startsWith('aura_'))total+=(localStorage[k]||'').length*2;}
+    used.textContent=(total/1024).toFixed(2)+' KB';
+    dot.className='dot green';text.textContent='✅ Storage Working';text.style.color='var(--success)';
+  }catch(e){dot.className='dot red';text.textContent='❌ Storage Blocked';text.style.color='var(--danger)';}
+}
+function showDataViewer(){
+  const v=document.getElementById('dataViewerContent'),d={};
+  for(let k in localStorage){if(localStorage.hasOwnProperty(k)&&k.startsWith('aura_')){try{d[k]=JSON.parse(localStorage.getItem(k));}catch{d[k]=localStorage.getItem(k);}}}
+  v.textContent=JSON.stringify(d,null,2);
+  document.getElementById('dataViewerModal').classList.add('active');
+}
+function copyDataToClipboard(){navigator.clipboard.writeText(document.getElementById('dataViewerContent').textContent).then(()=>showToast('Copied!'));}
+
+/* ===== CUSTOM FIELD TOGGLES ===== */
+function handleBadgeSelect(){document.getElementById('tBadgeCustomWrap').classList.toggle('show',document.getElementById('tBadgeSelect').value==='Custom');}
+function handlePricingTitleSelect(){document.getElementById('pTitleCustomWrap').classList.toggle('show',document.getElementById('pTitleSelect').value==='Custom');}
+function handlePricingPeriodSelect(){document.getElementById('pPeriodCustomWrap').classList.toggle('show',document.getElementById('pPeriodSelect').value==='Custom');}
+
+/* ===== GAMES ===== */
+function renderGamesTable(){
+  const games=getData('games');
+  document.getElementById('gamesTable').innerHTML=games.map(g=>{
+    const plats=Array.isArray(g.platforms)?g.platforms.join(', '):(g.platform||'Unknown');
+    return `<tr><td>${g.image?`<img src="${g.image}" class="thumb">`:`<div class="thumb-placeholder"><i class="fas fa-gamepad"></i></div>`}</td><td><strong style="color:#fff;">${g.title}</strong></td><td>${plats}</td><td>${g.genre}</td><td>${g.mode}</td><td class="actions"><button class="btn-edit" onclick="editGame(${g.id})"><i class="fas fa-edit"></i></button><button class="btn-del" onclick="deleteItem('games',${g.id},renderGamesTable)"><i class="fas fa-trash"></i></button></td></tr>`;
+  }).join('')||'<tr><td colspan="6" style="text-align:center;padding:20px;">No games yet.</td></tr>';
+}
+function openGameModal(id=null){
+  document.getElementById('gameModalTitle').textContent=id?'Edit Game':'Add Game';
+  document.getElementById('gameId').value=id||'';
+  document.getElementById('gameTitle').value='';
+  document.querySelectorAll('.plat-cb').forEach(cb=>cb.checked=false);
+  document.getElementById('gameGenre').value='Action';
+  document.getElementById('gameMode').value='Both';
+  document.getElementById('gameImage').value='';
+  if(id){const g=getData('games').find(x=>x.id===id);document.getElementById('gameTitle').value=g.title;if(Array.isArray(g.platforms))g.platforms.forEach(p=>{const cb=document.querySelector(`.plat-cb[value="${p}"]`);if(cb)cb.checked=true;});document.getElementById('gameGenre').value=g.genre||'Action';document.getElementById('gameMode').value=g.mode||'Both';document.getElementById('gameImage').value=g.image||'';}
+  document.getElementById('gameModal').classList.add('active');
+}
+function editGame(id){openGameModal(id);}
+function saveGame(){
+  const id=document.getElementById('gameId').value;
+  const plats=Array.from(document.querySelectorAll('.plat-cb:checked')).map(cb=>cb.value);
+  const game={id:id?parseInt(id):nextId(getData('games')),title:document.getElementById('gameTitle').value.trim(),platforms:plats,genre:document.getElementById('gameGenre').value,mode:document.getElementById('gameMode').value,image:document.getElementById('gameImage').value.trim()||null};
+  if(!game.title||!plats.length){showToast('Title & console required',true);return;}
+  let arr=getData('games');if(id)arr=arr.map(g=>g.id===parseInt(id)?game:g);else arr.push(game);
+  if(setData('games',arr)){closeModal('gameModal');renderGamesTable();updateStats();showToast('Saved!');}
+}
+
+/* ===== FOOD ===== */
+function renderFoodTable(){
+  const food=getData('food');
+  document.getElementById('foodTable').innerHTML=food.map(f=>`<tr><td>${f.image?`<img src="${f.image}" class="thumb">`:`<div class="thumb-placeholder"><i class="fas fa-utensils"></i></div>`}</td><td><strong style="color:#fff;">${f.name}</strong></td><td>${f.cat}</td><td style="color:var(--neon-blue);font-weight:700;">₹${f.price}</td><td class="actions"><button class="btn-edit" onclick="editFood(${f.id})"><i class="fas fa-edit"></i></button><button class="btn-del" onclick="deleteItem('food',${f.id},renderFoodTable)"><i class="fas fa-trash"></i></button></td></tr>`).join('')||'<tr><td colspan="5" style="text-align:center;padding:20px;">No items yet.</td></tr>';
+}
+function openFoodModal(id=null){
+  document.getElementById('foodModalTitle').textContent=id?'Edit Item':'Add Item';
+  document.getElementById('foodId').value=id||'';
+  ['foodName','foodDesc','foodPrice','foodImage'].forEach(x=>document.getElementById(x).value='');
+  document.getElementById('foodCat').value='Burgers';
+  if(id){const f=getData('food').find(x=>x.id===id);document.getElementById('foodName').value=f.name;document.getElementById('foodCat').value=f.cat;document.getElementById('foodDesc').value=f.desc;document.getElementById('foodPrice').value=f.price;document.getElementById('foodImage').value=f.image||'';}
+  document.getElementById('foodModal').classList.add('active');
+}
+function editFood(id){openFoodModal(id);}
+function saveFood(){
+  const id=document.getElementById('foodId').value;
+  const item={id:id?parseInt(id):nextId(getData('food')),name:document.getElementById('foodName').value.trim(),cat:document.getElementById('foodCat').value,desc:document.getElementById('foodDesc').value.trim(),price:parseInt(document.getElementById('foodPrice').value)||0,image:document.getElementById('foodImage').value.trim()||null};
+  if(!item.name){showToast('Name required',true);return;}
+  let arr=getData('food');if(id)arr=arr.map(f=>f.id===parseInt(id)?item:f);else arr.push(item);
+  if(setData('food',arr)){closeModal('foodModal');renderFoodTable();updateStats();showToast('Saved!');}
+}
+
+/* ===== LEADERBOARD ===== */
+function renderLbTable(){
+  const lb=getData('leaderboard').sort((a,b)=>b.points-a.points);
+  document.getElementById('lbTable').innerHTML=lb.map((p,i)=>`<tr><td>${p.image?`<img src="${p.image}" class="thumb">`:`<div class="thumb-placeholder">${(p.name||'?')[0]}</div>`}</td><td><strong style="color:#fff;">${i+1}. ${p.name}</strong></td><td style="color:var(--neon-blue);font-weight:700;">${p.points}</td><td>${p.wins}</td><td>${p.hours}h</td><td class="actions"><button class="btn-edit" onclick="editLb(${p.id})"><i class="fas fa-edit"></i></button><button class="btn-del" onclick="deleteItem('leaderboard',${p.id},renderLbTable)"><i class="fas fa-trash"></i></button></td></tr>`).join('')||'<tr><td colspan="6" style="text-align:center;padding:20px;">No players yet.</td></tr>';
+}
+function openLbModal(id=null){
+  document.getElementById('lbModalTitle').textContent=id?'Edit Player':'Add Player';
+  document.getElementById('lbId').value=id||'';
+  ['lbName','lbPoints','lbWins','lbHours','lbImage'].forEach(x=>document.getElementById(x).value='');
+  if(id){const p=getData('leaderboard').find(x=>x.id===id);document.getElementById('lbName').value=p.name;document.getElementById('lbPoints').value=p.points;document.getElementById('lbWins').value=p.wins;document.getElementById('lbHours').value=p.hours;document.getElementById('lbImage').value=p.image||'';}
+  document.getElementById('lbModal').classList.add('active');
+}
+function editLb(id){openLbModal(id);}
+function saveLb(){
+  const id=document.getElementById('lbId').value;
+  const p={id:id?parseInt(id):nextId(getData('leaderboard')),name:document.getElementById('lbName').value.trim(),points:parseInt(document.getElementById('lbPoints').value)||0,wins:parseInt(document.getElementById('lbWins').value)||0,hours:parseInt(document.getElementById('lbHours').value)||0,image:document.getElementById('lbImage').value.trim()||null};
+  if(!p.name){showToast('Name required',true);return;}
+  let arr=getData('leaderboard');if(id)arr=arr.map(x=>x.id===parseInt(id)?p:x);else arr.push(p);
+  if(setData('leaderboard',arr)){closeModal('lbModal');renderLbTable();updateStats();showToast('Saved!');}
+}
+
+/* ===== TOURNAMENTS ===== */
+function renderTourneyTable(){
+  const t=getData('tournaments');
+  document.getElementById('tourneyTable').innerHTML=t.map(x=>`<tr><td><span style="padding:4px 10px;border-radius:20px;background:rgba(139,92,246,0.2);color:var(--neon-blue);font-size:0.8rem;font-weight:700;">${x.badge}</span></td><td><strong style="color:#fff;">${x.name}</strong></td><td>${x.game}</td><td>${x.date}</td><td style="color:#ffd700;font-weight:700;">${x.prize}</td><td class="actions"><button class="btn-edit" onclick="editTourney(${x.id})"><i class="fas fa-edit"></i></button><button class="btn-del" onclick="deleteItem('tournaments',${x.id},renderTourneyTable)"><i class="fas fa-trash"></i></button></td></tr>`).join('')||'<tr><td colspan="6" style="text-align:center;padding:20px;">No tournaments yet.</td></tr>';
+}
+function openTourneyModal(id=null){
+  document.getElementById('tourneyModalTitle').textContent=id?'Edit Tournament':'Add Tournament';
+  document.getElementById('tourneyId').value=id||'';
+  document.getElementById('tBadgeSelect').value='Fighting';
+  document.getElementById('tBadgeCustom').value='';
+  document.getElementById('tBadgeCustomWrap').classList.remove('show');
+  ['tName','tGame','tDate','tReg','tFee','tFormat','tPrize'].forEach(x=>document.getElementById(x).value='');
+  if(id){
+    const x=getData('tournaments').find(y=>y.id===id);
+    document.getElementById('tName').value=x.name;document.getElementById('tGame').value=x.game;
+    document.getElementById('tDate').value=x.date;document.getElementById('tReg').value=x.reg;document.getElementById('tFormat').value=x.format;
+    const common=['Fighting','Sports','Battle Royale','Racing','Adventure','Shooter','RPG'];
+    if(common.includes(x.badge)){document.getElementById('tBadgeSelect').value=x.badge;}
+    else{document.getElementById('tBadgeSelect').value='Custom';document.getElementById('tBadgeCustom').value=x.badge;document.getElementById('tBadgeCustomWrap').classList.add('show');}
+    document.getElementById('tFee').value=x.fee?x.fee.replace('₹','').trim():'';
+    document.getElementById('tPrize').value=x.prize?x.prize.replace('₹','').trim():'';
+  }
+  document.getElementById('tourneyModal').classList.add('active');
+}
+function editTourney(id){openTourneyModal(id);}
+function saveTourney(){
+  const id=document.getElementById('tourneyId').value;
+  const badgeSel=document.getElementById('tBadgeSelect').value;
+  const badge=badgeSel==='Custom'?document.getElementById('tBadgeCustom').value.trim():badgeSel;
+  const fee=document.getElementById('tFee').value.trim();
+  const prize=document.getElementById('tPrize').value.trim();
+  const x={id:id?parseInt(id):nextId(getData('tournaments')),badge,name:document.getElementById('tName').value.trim(),game:document.getElementById('tGame').value.trim(),date:document.getElementById('tDate').value.trim(),reg:document.getElementById('tReg').value.trim(),fee:fee?'₹'+fee:'₹0',format:document.getElementById('tFormat').value.trim(),prize:prize?'₹'+prize:'₹0'};
+  if(!x.name||!x.badge){showToast('Name & Badge required',true);return;}
+  let arr=getData('tournaments');if(id)arr=arr.map(y=>y.id===parseInt(id)?x:y);else arr.push(x);
+  if(setData('tournaments',arr)){closeModal('tourneyModal');renderTourneyTable();updateStats();showToast('Saved!');}
+}
+
+/* ===== CHAMPION ===== */
+function loadChampion(){
+  const c=getObject('champion');
+  document.getElementById('champName').value=c.name||'';
+  document.getElementById('champGame').value=c.game||'';
+  document.getElementById('champWins').value=c.wins||'';
+  document.getElementById('champPoints').value=c.points||'';
+  document.getElementById('champInsta').value=c.insta||'';
+  document.getElementById('champImage').value=c.image||'';
+}
+function saveChampion(){
+  const c={name:document.getElementById('champName').value.trim(),game:document.getElementById('champGame').value.trim(),wins:parseInt(document.getElementById('champWins').value)||0,points:parseInt(document.getElementById('champPoints').value)||0,insta:document.getElementById('champInsta').value.trim(),image:document.getElementById('champImage').value.trim()||null};
+  if(!c.name){showToast('Name required',true);return;}
+  if(setData('champion',c))showToast('Champion updated!');
+}
+
+/* ===== PRICING ===== */
+function renderPricingTable(){
+  const p=getData('pricing');
+  document.getElementById('pricingTable').innerHTML=p.map(x=>`<tr><td><strong style="color:#fff;">${x.title}</strong></td><td style="color:var(--neon-blue);font-weight:700;">₹${x.price}<span style="color:var(--silver-dim);font-size:0.85rem;">${x.period}</span></td><td>${x.featured?'⭐ Yes':'No'}</td><td class="actions"><button class="btn-edit" onclick="editPricing(${x.id})"><i class="fas fa-edit"></i></button><button class="btn-del" onclick="deleteItem('pricing',${x.id},renderPricingTable)"><i class="fas fa-trash"></i></button></td></tr>`).join('')||'<tr><td colspan="4" style="text-align:center;padding:20px;">No packages yet.</td></tr>';
+}
+/* ============================================
+   PRICING - CRASH-PROOF VERSION
+============================================ */
+// Safe helper: only sets value if element exists
+function safeSet(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.value = value;
+}
+function safeCheck(id, bool) {
+  const el = document.getElementById(id);
+  if (el) el.checked = bool;
+}
+
+function openPricingModal(id = null) {
+  const modal = document.getElementById('pricingModal');
+  if (!modal) { alert('Pricing modal HTML is missing! Please update the HTML block.'); return; }
+
+  document.getElementById('pricingModalTitle').textContent = id ? 'Edit Package' : 'Add Package';
+  safeSet('pricingId', id || '');
+  safeSet('pTitleSelect', 'Hourly Play');
+  safeSet('pTitleCustom', '');
+  safeSet('pIcon', 'fa-gamepad');
+  safeSet('pDesc', '');
+  safeSet('pPrice', '');
+  safeSet('pPeriodSelect', '/hour');
+  safeSet('pPeriodCustom', '');
+  safeSet('pFeatures', '');
+  safeCheck('pFeatured', false);
+  document.getElementById('pTitleCustomWrap')?.classList.remove('show');
+  document.getElementById('pPeriodCustomWrap')?.classList.remove('show');
+
+  if (id) {
+    const x = getData('pricing').find(y => y.id === id);
+    if (!x) { showToast('Package not found', true); return; }
+
+    const commonTitles = ['Hourly Play','Next-Gen Hour','Multiplayer Squad','Group Party','Tournament Pass','Aura Membership'];
+    if (commonTitles.includes(x.title)) {
+      safeSet('pTitleSelect', x.title);
+    } else {
+      safeSet('pTitleSelect', 'Custom');
+      safeSet('pTitleCustom', x.title);
+      document.getElementById('pTitleCustomWrap')?.classList.add('show');
+    }
+
+    safeSet('pIcon', x.icon || 'fa-gamepad');
+    safeSet('pDesc', x.desc || '');
+    safeSet('pPrice', x.price || '');
+
+    const commonPeriods = ['/hour','/2 hrs','/4 hrs','/month','/entry'];
+    if (commonPeriods.includes(x.period)) {
+      safeSet('pPeriodSelect', x.period);
+    } else {
+      safeSet('pPeriodSelect', 'Custom');
+      safeSet('pPeriodCustom', x.period);
+      document.getElementById('pPeriodCustomWrap')?.classList.add('show');
+    }
+
+    safeSet('pFeatures', Array.isArray(x.features) ? x.features.join('\n') : '');
+    safeCheck('pFeatured', x.featured || false);
+  }
+
+  modal.classList.add('active');
+}
+
+function editPricing(id) {
+  console.log('Edit clicked for id:', id); // Debug line
+  openPricingModal(id);
+}
+
+function savePricing() {
+  const id = document.getElementById('pricingId').value;
+  const titleSelect = document.getElementById('pTitleSelect').value;
+  const title = titleSelect === 'Custom' ? document.getElementById('pTitleCustom').value.trim() : titleSelect;
+  const periodSelect = document.getElementById('pPeriodSelect').value;
+  const period = periodSelect === 'Custom' ? document.getElementById('pPeriodCustom').value.trim() : periodSelect;
+  const feats = document.getElementById('pFeatures').value.split('\n').filter(f => f.trim() !== '');
+
+  const x = {
+    id: id ? parseInt(id) : nextId(getData('pricing')),
+    title: title,
+    icon: document.getElementById('pIcon') ? document.getElementById('pIcon').value : 'fa-gamepad',
+    desc: document.getElementById('pDesc').value.trim(),
+    price: document.getElementById('pPrice').value.trim(),
+    period: period,
+    features: feats,
+    featured: document.getElementById('pFeatured').checked
+  };
+
+  if (!x.title || !x.price) { showToast('Title and Price required', true); return; }
+
+  let arr = getData('pricing');
+  if (id) arr = arr.map(y => y.id === parseInt(id) ? x : y); else arr.push(x);
+
+  if (setData('pricing', arr)) {
+    closeModal('pricingModal');
+    renderPricingTable();
+    updateStats();
+    showToast('✅ Pricing saved!');
+  }
+}
+
+
+/* ===== DAILY ORDERS WITH SMART DATALISTS ===== */
+function populateOrderDatalists(){
+  const games=getData('games');
+  const gList=document.getElementById('gamesList');
+  gList.innerHTML='';
+  games.forEach(g=>{const o=document.createElement('option');o.value=g.title;gList.appendChild(o);});
+  const food=getData('food');
+  const fList=document.getElementById('foodList');
+  fList.innerHTML='';
+  food.forEach(f=>{const o=document.createElement('option');o.value=f.name;fList.appendChild(o);});
+}
+function renderOrdersTable(){
+  const orders=getData('orders').sort((a,b)=>new Date(b.time)-new Date(a.time));
+  const tbody=document.getElementById('ordersTable');
+  if(!orders.length){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:20px;">No orders yet.</td></tr>';updateOrderStats(orders);return;}
+  tbody.innerHTML=orders.map(o=>{
+    const d=new Date(o.time);
+    const ts=d.toLocaleDateString('en-IN',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+    const sc=o.status==='Paid'?'var(--success)':'var(--warning)';
+    return `<tr><td><small>${ts}</small></td><td><strong style="color:#fff;">${o.customer||'Walk-in'}</strong><br><small style="color:var(--silver-dim);">${o.type}</small></td><td>Stn ${o.station||'-'}</td><td><strong>${o.game||'N/A'}</strong><br><small style="color:var(--neon-blue);">${o.console} • ${o.duration}h</small></td><td><small>${o.food||'None'}</small></td><td style="color:var(--success);font-weight:700;">₹${o.total}</td><td><span style="color:${sc};font-weight:700;">${o.status}</span><br><small>${o.payment}</small></td><td class="actions"><button class="btn-edit" onclick="editOrder(${o.id})"><i class="fas fa-edit"></i></button><button class="btn-del" onclick="deleteItem('orders',${o.id},renderOrdersTable)"><i class="fas fa-trash"></i></button></td></tr>`;
+  }).join('');
+  updateOrderStats(orders);
+}
+function openOrderModal(id=null){
+  populateOrderDatalists();
+  document.getElementById('orderId').value=id||'';
+  document.getElementById('orderCustomer').value='';
+  document.getElementById('orderType').value='Walk-In';
+  document.getElementById('orderStation').value='';
+  document.getElementById('orderConsole').value='PS5';
+  document.getElementById('orderDuration').value='1';
+  document.getElementById('orderGame').value='';
+  document.getElementById('orderFood').value='';
+  document.getElementById('orderTotal').value='';
+  document.getElementById('orderPayment').value='UPI';
+  document.getElementById('orderStatus').value='Paid';
+  if(id){
+    const o=getData('orders').find(x=>x.id===id);
+    document.getElementById('orderCustomer').value=o.customer;
+    document.getElementById('orderType').value=o.type;
+    document.getElementById('orderStation').value=o.station;
+    document.getElementById('orderConsole').value=o.console;
+    document.getElementById('orderDuration').value=o.duration;
+    document.getElementById('orderGame').value=o.game;
+    document.getElementById('orderFood').value=o.food;
+    document.getElementById('orderTotal').value=o.total;
+    document.getElementById('orderPayment').value=o.payment;
+    document.getElementById('orderStatus').value=o.status;
+  }
+  document.getElementById('orderModal').classList.add('active');
+}
+function editOrder(id){openOrderModal(id);}
+function saveOrder(){
+  const id=document.getElementById('orderId').value;
+  const order={
+    id:id?parseInt(id):nextId(getData('orders')),
+    time:new Date().toISOString(),
+    customer:document.getElementById('orderCustomer').value.trim(),
+    type:document.getElementById('orderType').value,
+    station:document.getElementById('orderStation').value.trim(),
+    console:document.getElementById('orderConsole').value,
+    duration:document.getElementById('orderDuration').value,
+    game:document.getElementById('orderGame').value.trim(),
+    food:document.getElementById('orderFood').value.trim(),
+    total:document.getElementById('orderTotal').value.trim()||'0',
+    payment:document.getElementById('orderPayment').value,
+    status:document.getElementById('orderStatus').value,
+    staff:'Admin'
+  };
+  if(!order.total||order.total==='0'){showToast('Total required',true);return;}
+  let arr=getData('orders');if(id)arr=arr.map(x=>x.id===parseInt(id)?order:x);else arr.push(order);
+  if(setData('orders',arr)){closeModal('orderModal');renderOrdersTable();updateStats();showToast('✅ Order logged!');}
+}
+function updateOrderStats(orders){
+  const today=new Date().toDateString();
+  const t=orders.filter(o=>new Date(o.time).toDateString()===today&&o.status==='Paid');
+  const rev=t.reduce((s,o)=>s+(parseInt(o.total)||0),0);
+  document.getElementById('statTodayOrders').textContent=t.length;
+  document.getElementById('statTodayRevenue').textContent='₹'+rev;
+}
+
+/* ===== UTILS ===== */
+function deleteItem(key,id,renderFn){
+  if(!confirm('Delete this item?'))return;
+  setData(key,getData(key).filter(x=>x.id!==id));
+  renderFn();updateStats();showToast('Deleted');
+}
+function updateStats(){
+  document.getElementById('statGames').textContent=getData('games').length;
+  document.getElementById('statFood').textContent=getData('food').length;
+  document.getElementById('statTour').textContent=getData('tournaments').length;
+  document.getElementById('statPlayers').textContent=getData('leaderboard').length;
+  document.getElementById('statPricing').textContent=getData('pricing').length;
+  updateOrderStats(getData('orders'));
+}
+function refreshAll(){
+  renderGamesTable();renderFoodTable();renderLbTable();renderTourneyTable();loadChampion();renderPricingTable();renderOrdersTable();updateStats();
+}
+
+/* ===== EXPORT EXCEL (ALL SHEETS) ===== */
+function exportToExcel(){
+  try{
+    const wb=XLSX.utils.book_new();
+    const games=getData('games');
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(games.map(g=>({'Game Title':g.title||'','Consoles':Array.isArray(g.platforms)?g.platforms.join(', '):(g.platform||''),'Genre':g.genre||'','Mode':g.mode||''})).length?games.map(g=>({'Game Title':g.title||'','Consoles':Array.isArray(g.platforms)?g.platforms.join(', '):(g.platform||''),'Genre':g.genre||'','Mode':g.mode||''})):[{'Game Title':'No games'}]),'Games');
+    const food=getData('food');
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(food.map(f=>({'Category':f.cat||'','Item Name':f.name||'','Description':f.desc||'','Price (₹)':f.price||0})).length?food.map(f=>({'Category':f.cat||'','Item Name':f.name||'','Description':f.desc||'','Price (₹)':f.price||0})):[{'Item Name':'No food'}]),'Food Menu');
+    const pricing=getData('pricing');
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(pricing.map(p=>({'Package':p.title||'','Price (₹)':p.price||0,'Period':p.period||'','Featured':p.featured?'Yes':'No'})).length?pricing.map(p=>({'Package':p.title||'','Price (₹)':p.price||0,'Period':p.period||'','Featured':p.featured?'Yes':'No'})):[{'Package':'No pricing'}]),'Pricing');
+    const lb=getData('leaderboard').sort((a,b)=>b.points-a.points);
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(lb.map((p,i)=>({'Rank':i+1,'Player':p.name||'','Points':p.points||0,'Wins':p.wins||0,'Hours':p.hours||0})).length?lb.map((p,i)=>({'Rank':i+1,'Player':p.name||'','Points':p.points||0,'Wins':p.wins||0,'Hours':p.hours||0})):[{'Player':'No players'}]),'Leaderboard');
+    const t=getData('tournaments');
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(t.map(x=>({'Name':x.name||'','Game':x.game||'','Date':x.date||'','Prize':x.prize||''})).length?t.map(x=>({'Name':x.name||'','Game':x.game||'','Date':x.date||'','Prize':x.prize||''})):[{'Name':'No tournaments'}]),'Tournaments');
+    const allOrders=getData('orders').sort((a,b)=>new Date(b.time)-new Date(a.time));
+    const ordersData=allOrders.map(o=>{const d=new Date(o.time);return{'Date':d.toLocaleDateString('en-IN'),'Time':d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}),'Customer':o.customer||'Walk-in','Type':o.type||'','Station':o.station||'-','Console':o.console||'-','Game Played':o.game||'-','Duration (Hrs)':o.duration||'-','Food Ordered':o.food||'','Total Paid (₹)':o.total||0,'Payment':o.payment||'','Status':o.status||'Paid','Staff':o.staff||'Admin'};});
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(ordersData.length?ordersData:[{'Date':'No orders logged yet'}]),'Daily Sales & Orders');
+    const date=new Date().toISOString().split('T')[0];
+    XLSX.writeFile(wb,`AURA_Game_Zone_Data_${date}.xlsx`);
+    showToast('✅ Excel downloaded!');
+  }catch(e){showToast('❌ Export failed: '+e.message,true);}
+}
+
+/* ===== BACKUP / RESTORE ===== */
+function exportData(){
+  const backup={games:getData('games'),food:getData('food'),leaderboard:getData('leaderboard'),tournaments:getData('tournaments'),champion:getObject('champion'),pricing:getData('pricing'),orders:getData('orders'),exportedAt:new Date().toISOString()};
+  const blob=new Blob([JSON.stringify(backup)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`aura-backup-${new Date().toISOString().split('T')[0]}.json`;a.click();
+  showToast('Backup downloaded!');
+}
+/* ============================================
+   SMART IMPORT (JSON, CSV, or XLSX) v2
+============================================ */
+let pendingImportData = null; // Stores data if auto-detect fails
+
+function importData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const fileName = file.name.toLowerCase();
+
+  // --- 1. HANDLE JSON BACKUP (Full Restore) ---
+  if (fileName.endsWith('.json')) {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (!confirm('⚠️ This will REPLACE ALL current data with this backup. Continue?')) return;
+        
+        ['games', 'food', 'leaderboard', 'tournaments', 'pricing', 'orders'].forEach(k => {
+          if (data[k]) setData(k, data[k]);
+        });
+        if (data.champion) setData('champion', data.champion);
+        
+        refreshAll();
+        showToast('✅ Full JSON Backup Restored!');
+      } catch { showToast('❌ Invalid or corrupted JSON file', true); }
+    };
+    reader.readAsText(file);
+  } 
+  
+  // --- 2. HANDLE CSV OR EXCEL ---
+  else if (fileName.endsWith('.csv') || fileName.endsWith('.xlsx')) {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const data = new Uint8Array(ev.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheetName = workbook.SheetNames[0];
+        const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName]);
+
+        if (!jsonData || jsonData.length === 0) {
+          showToast('❌ File is empty', true); return;
+        }
+
+        // Make headers lowercase and trim spaces for better matching
+        const headers = Object.keys(jsonData[0]).map(h => h.toString().toLowerCase().trim());
+        let targetKey = null;
+
+        // Robust Auto-Detection
+        if (headers.some(h => h.includes('game title') || h.includes('title'))) targetKey = 'games';
+        else if (headers.some(h => h.includes('item name') || h.includes('name'))) targetKey = 'food';
+        else if (headers.some(h => h.includes('package') || h.includes('price'))) targetKey = 'pricing';
+        else if (headers.some(h => h.includes('player') || h.includes('points'))) targetKey = 'leaderboard';
+        else if (headers.some(h => h.includes('tournament') || h.includes('prize'))) targetKey = 'tournaments';
+        else if (headers.some(h => h.includes('game played') || h.includes('customer') || h.includes('total paid'))) targetKey = 'orders';
+
+        if (targetKey) {
+          // Auto-detected successfully
+          processImport(targetKey, jsonData);
+        } else {
+          // Auto-detect failed: Store data and show manual selector modal
+          pendingImportData = jsonData;
+          document.getElementById('importCategoryModal').classList.add('active');
+        }
+        
+      } catch (err) {
+        console.error('Import error:', err);
+        showToast('❌ Failed to read file.', true);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  } 
+  
+  else {
+    showToast('❌ Only .json, .csv, or .xlsx files are allowed', true);
+  }
+
+  e.target.value = '';
+}
+
+// Handles the actual data transformation and saving
+function processImport(targetKey, jsonData) {
+  if (!confirm(`⚠️ This will REPLACE all data in the "${targetKey.toUpperCase()}" section. Continue?`)) return;
+
+  const transformFn = getTransformFunction(targetKey);
+  const newData = jsonData.map(transformFn);
+  
+  setData(targetKey, newData);
+  refreshAll();
+  showToast(`✅ ${targetKey.toUpperCase()} restored successfully!`);
+}
+
+// Called when user manually selects a category from the fallback modal
+function confirmManualImport() {
+  const targetKey = document.getElementById('importCategorySelect').value;
+  closeModal('importCategoryModal');
+  if (pendingImportData) {
+    processImport(targetKey, pendingImportData);
+    pendingImportData = null;
+  }
+}
+
+// Returns the correct transformation logic based on category
+function getTransformFunction(targetKey) {
+  switch(targetKey) {
+    case 'games': return row => ({
+      id: nextId(getData('games')),
+      title: row['Game Title'] || row['Title'] || 'Unknown',
+      platforms: (row['Consoles'] || '').split(',').map(s => s.trim()).filter(Boolean),
+      genre: row['Genre'] || 'Action', mode: row['Mode'] || 'Both', image: row['Image URL'] || null
+    });
+    case 'food': return row => ({
+      id: nextId(getData('food')),
+      name: row['Item Name'] || row['Name'] || 'Unknown',
+      cat: row['Category'] || 'General', desc: row['Description'] || '',
+      price: parseInt(row['Price (₹)'] || row['Price'] || 0), image: row['Image URL'] || null
+    });
+    case 'pricing': return row => ({
+      id: nextId(getData('pricing')),
+      title: row['Package'] || row['Package Title'] || 'Unknown',
+      desc: row['Description'] || '', price: String(row['Price (₹)'] || row['Price'] || 0),
+      period: row['Period'] || '',
+      features: (row['Features'] || '').split('|').map(s => s.trim()).filter(Boolean),
+      featured: (row['Featured'] || '').toLowerCase().includes('yes'), icon: 'fa-gamepad'
+    });
+    case 'leaderboard': return row => ({
+      id: nextId(getData('leaderboard')),
+      name: row['Player'] || row['Player Name'] || 'Unknown',
+      points: parseInt(row['Points'] || 0), wins: parseInt(row['Wins'] || 0),
+      hours: parseInt(row['Hours'] || row['Hours Played'] || 0), image: null
+    });
+    case 'tournaments': return row => ({
+      id: nextId(getData('tournaments')),
+      badge: row['Badge'] || 'Event',
+      name: row['Name'] || row['Tournament Name'] || 'Unknown',
+      game: row['Game'] || '', date: row['Date'] || '', reg: row['Registration Deadline'] || '',
+      fee: row['Entry Fee'] || '₹0', format: row['Format'] || '',
+      prize: row['Prize'] || row['Prize Pool'] || '₹0'
+    });
+    case 'orders': return row => ({
+      id: nextId(getData('orders')),
+      time: (row['Date'] && row['Time']) ? new Date(row['Date'] + ' ' + row['Time']).toISOString() : new Date().toISOString(),
+      customer: row['Customer'] || 'Walk-in', type: row['Type'] || 'Walk-In',
+      station: row['Station'] || '', console: row['Console'] || 'PS5',
+      duration: row['Duration (Hrs)'] || 1, game: row['Game Played'] || '',
+      food: row['Food Ordered'] || '', total: String(row['Total Paid (₹)'] || row['Total'] || 0),
+      payment: row['Payment'] || 'UPI', status: row['Status'] || 'Paid', staff: row['Staff'] || 'Admin'
+    });
+    default: return row => row;
+  }
+}
+</script>
+<!-- Import Category Fallback Modal -->
+<div class="modal-overlay" id="importCategoryModal">
+  <div class="modal" style="max-width: 400px;">
+    <h3>📂 Select Data Category</h3>
+    <p style="color: var(--silver-dim); margin-bottom: 15px; font-size: 0.9rem;">We couldn't auto-detect the file type. Please choose which section this data belongs to:</p>
+    <div class="form-group">
+      <select id="importCategorySelect" style="width: 100%; padding: 10px; border-radius: 8px; background: var(--card); border: 1px solid rgba(139,92,246,0.3); color: #fff;">
+        <option value="games">Games</option>
+        <option value="food">Food Menu</option>
+        <option value="pricing">Pricing</option>
+        <option value="leaderboard">Leaderboard</option>
+        <option value="tournaments">Tournaments</option>
+        <option value="orders">Daily Orders</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('importCategoryModal')">Cancel</button>
+      <button class="btn-save" onclick="confirmManualImport()">Import</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
